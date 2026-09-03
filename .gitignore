@@ -1,4 +1,5 @@
 expenses.db
 bot.log
+channel_idx.txt
 __pycache__/
 *.pyc

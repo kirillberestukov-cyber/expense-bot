@@ -2060,14 +2060,30 @@ CHANNEL_POSTS = [
     "Гарантирую — минимум одна цифра тебя удивит.",
 ]
 
-_channel_post_index: dict = {"idx": 0, "running": False}
+CHANNEL_IDX_FILE = "channel_idx.txt"
+_channel_running = False
+
+
+def _load_channel_idx() -> int:
+    try:
+        with open(CHANNEL_IDX_FILE) as f:
+            return int(f.read().strip())
+    except Exception:
+        return 0
+
+
+def _save_channel_idx(idx: int) -> None:
+    with open(CHANNEL_IDX_FILE, "w") as f:
+        f.write(str(idx))
 
 
 async def channel_scheduler(bot: Bot) -> None:
-    _channel_post_index["running"] = True
-    while _channel_post_index["running"]:
+    global _channel_running
+    _channel_running = True
+    await asyncio.sleep(3600)
+    while _channel_running:
+        idx = _load_channel_idx() % len(CHANNEL_POSTS)
         try:
-            idx = _channel_post_index["idx"] % len(CHANNEL_POSTS)
             text = CHANNEL_POSTS[idx]
             text += (
                 "\n\n—\n"
@@ -2075,22 +2091,23 @@ async def channel_scheduler(bot: Bot) -> None:
                 "Пиши <code>кофе 300</code> — и контролируй финансы."
             )
             await bot.send_message(CHANNEL_USERNAME, text, parse_mode="HTML")
-            _channel_post_index["idx"] = idx + 1
+            _save_channel_idx(idx + 1)
             log.info("Пост #%d опубликован в канал", idx + 1)
         except Exception as e:
             log.error("Ошибка постинга в канал: %s", e)
-        await asyncio.sleep(3600)  # 1 час
+        await asyncio.sleep(3600)
 
 
 async def cmd_channel(message: Message, bot: Bot) -> None:
     if not is_admin(message.from_user.id):
         return
+    idx = _load_channel_idx()
     await message.answer(
         f"📢 <b>Канал: {CHANNEL_USERNAME}</b>\n\n"
         f"Постов в очереди: {len(CHANNEL_POSTS)}\n"
-        f"Следующий пост: #{_channel_post_index['idx'] % len(CHANNEL_POSTS) + 1}\n"
-        f"Автопостинг: {'✅ вкл' if _channel_post_index['running'] else '❌ выкл'}\n"
-        f"Интервал: каждые 12 часов",
+        f"Следующий пост: #{idx % len(CHANNEL_POSTS) + 1}\n"
+        f"Автопостинг: {'✅ вкл' if _channel_running else '❌ выкл'}\n"
+        f"Интервал: каждый час",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📤 Опубликовать сейчас", callback_data="ch:now")],
@@ -2103,13 +2120,14 @@ async def cmd_channel(message: Message, bot: Bot) -> None:
 
 
 async def callback_channel(callback: CallbackQuery, bot: Bot) -> None:
+    global _channel_running
     if not is_admin(callback.from_user.id):
         await callback.answer("Нет доступа.", show_alert=True)
         return
     action = callback.data.removeprefix("ch:")
 
     if action == "now":
-        idx = _channel_post_index["idx"] % len(CHANNEL_POSTS)
+        idx = _load_channel_idx() % len(CHANNEL_POSTS)
         text = CHANNEL_POSTS[idx]
         text += (
             "\n\n—\n"
@@ -2118,17 +2136,17 @@ async def callback_channel(callback: CallbackQuery, bot: Bot) -> None:
         )
         try:
             await bot.send_message(CHANNEL_USERNAME, text, parse_mode="HTML")
-            _channel_post_index["idx"] = idx + 1
+            _save_channel_idx(idx + 1)
             await callback.answer(f"Пост #{idx + 1} опубликован!")
         except Exception as e:
             await callback.answer(f"Ошибка: {e}", show_alert=True)
 
     elif action == "stop":
-        _channel_post_index["running"] = False
+        _channel_running = False
         await callback.answer("Автопостинг остановлен.")
 
     elif action == "start":
-        if not _channel_post_index["running"]:
+        if not _channel_running:
             asyncio.create_task(channel_scheduler(bot))
             await callback.answer("Автопостинг запущен!")
         else:
