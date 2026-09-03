@@ -56,6 +56,7 @@ MONTHS_RU = {
 PRO_BUTTON_TEXT = "⭐ Купить Pro"
 PRO_PRICE = 1  # минимум — 1 звезда
 ADMIN_ID = int(os.getenv("ADMIN_ID", "5540838704"))
+CHANNEL_USERNAME = "@finance_hacks_ru_orig"
 
 CURRENCY_MAP = {
     "$": "USD", "€": "EUR", "£": "GBP", "₺": "TRY",
@@ -1869,6 +1870,166 @@ async def callback_export(callback: CallbackQuery, bot: Bot) -> None:
     await callback.answer()
 
 
+# ── Канал: автопостинг ────────────────────────────────────────────────────────
+
+CHANNEL_POSTS = [
+    "💡 <b>Правило 50/30/20</b>\n\n"
+    "50% дохода — на необходимое (жильё, еда, транспорт)\n"
+    "30% — на желания (развлечения, покупки)\n"
+    "20% — на накопления и долги\n\n"
+    "Начни отслеживать свои категории прямо сейчас 👇",
+
+    "☕ <b>Латте-фактор</b>\n\n"
+    "Кофе за 300₽ каждый день = 9 000₽/мес = 108 000₽/год.\n\n"
+    "Это не значит «не пей кофе». Это значит — знай, куда уходят деньги. "
+    "Запиши свой первый расход — и удивись в конце месяца.",
+
+    "📊 <b>Почему люди не копят?</b>\n\n"
+    "Потому что не знают, сколько тратят. Серьёзно.\n\n"
+    "Исследования показывают: люди, которые записывают расходы, "
+    "тратят на 15-20% меньше уже в первый месяц.",
+
+    "🎯 <b>Как поставить финансовую цель</b>\n\n"
+    "1. Назови цель конкретно: не «накопить», а «отпуск в Турцию за 80 000₽»\n"
+    "2. Раздели на месяцы: 80 000 / 8 мес = 10 000₽/мес\n"
+    "3. Отслеживай прогресс\n\n"
+    "Цель без плана — это просто мечта.",
+
+    "🧠 <b>Эффект «фантомных денег»</b>\n\n"
+    "Картой мы тратим на 12-18% больше, чем наличными. "
+    "Мозг не «чувствует» цифровые траты.\n\n"
+    "Решение: записывай каждый расход сразу после покупки. "
+    "Это возвращает осознанность.",
+
+    "📉 <b>Три расхода, которые незаметно съедают бюджет</b>\n\n"
+    "1. Подписки, которыми не пользуешься\n"
+    "2. Доставка еды вместо готовки\n"
+    "3. Спонтанные покупки на маркетплейсах\n\n"
+    "Проверь свою статистику за месяц — ты удивишься.",
+
+    "💰 <b>Правило 24 часов</b>\n\n"
+    "Хочешь купить что-то дороже 3 000₽? Подожди 24 часа.\n"
+    "Если через сутки всё ещё хочешь — покупай.\n\n"
+    "80% импульсивных покупок не переживают эту проверку.",
+
+    "🔄 <b>Регулярные расходы — невидимый враг</b>\n\n"
+    "Netflix + Spotify + YouTube Premium + iCloud + …\n"
+    "Каждая подписка кажется мелочью, но вместе — тысячи в месяц.\n\n"
+    "Запиши все свои подписки. Прямо сейчас. Потом спасибо скажешь.",
+
+    "📅 <b>Знаешь свой самый дорогой день?</b>\n\n"
+    "У большинства людей это пятница или суббота.\n"
+    "Вечером расслабляешься — и кошелёк тоже.\n\n"
+    "Узнай свой паттерн — и сможешь его контролировать.",
+
+    "🏦 <b>Финансовая подушка</b>\n\n"
+    "3-6 месячных расходов на экстренном счёте.\n"
+    "Это не инвестиция, это страховка.\n\n"
+    "Не знаешь, сколько тратишь в месяц? Начни записывать — и через 30 дней "
+    "будешь знать точную цифру.",
+
+    "⚡ <b>Метод конвертов (цифровой)</b>\n\n"
+    "Раздели бюджет по категориям: Еда — 15 000, Транспорт — 5 000, Развлечения — 8 000.\n"
+    "Как только категория исчерпана — стоп.\n\n"
+    "Это именно то, для чего нужны бюджеты с лимитами.",
+
+    "💡 <b>50₽ или 50 000₽?</b>\n\n"
+    "Мы торгуемся за скидку на технику за 50 000₽, "
+    "но не замечаем ежедневных трат по 50-200₽.\n\n"
+    "А ведь 200₽ × 365 дней = 73 000₽. Больше, чем та техника.",
+
+    "🎓 <b>Лучшая инвестиция</b>\n\n"
+    "Это не крипта и не акции. Это привычка считать деньги.\n\n"
+    "Люди, которые ведут учёт расходов хотя бы 3 месяца, "
+    "в среднем увеличивают накопления на 30%.",
+
+    "🌍 <b>Тратишь в разных валютах?</b>\n\n"
+    "Путешествия, онлайн-покупки, подписки в долларах…\n"
+    "Сложно понять реальные траты, когда они в 3 валютах.\n\n"
+    "Автоматическая конвертация решает эту проблему.",
+
+    "👥 <b>Ведёшь бюджет с партнёром?</b>\n\n"
+    "Главная причина ссор из-за денег — "
+    "«я не знал(а), что ты столько потратил(а)».\n\n"
+    "Совместный учёт расходов — самый простой способ это исправить. "
+    "Прозрачность = меньше конфликтов.",
+]
+
+_channel_post_index: dict = {"idx": 0, "running": False}
+
+
+async def channel_scheduler(bot: Bot) -> None:
+    _channel_post_index["running"] = True
+    while _channel_post_index["running"]:
+        try:
+            idx = _channel_post_index["idx"] % len(CHANNEL_POSTS)
+            text = CHANNEL_POSTS[idx]
+            text += (
+                "\n\n—\n"
+                "🤖 <b>Бот для учёта расходов:</b> @tgbotexpensiveclaudecode_bot\n"
+                "Пиши <code>кофе 300</code> — и контролируй финансы."
+            )
+            await bot.send_message(CHANNEL_USERNAME, text, parse_mode="HTML")
+            _channel_post_index["idx"] = idx + 1
+            log.info("Пост #%d опубликован в канал", idx + 1)
+        except Exception as e:
+            log.error("Ошибка постинга в канал: %s", e)
+        await asyncio.sleep(43200)  # 12 часов
+
+
+async def cmd_channel(message: Message, bot: Bot) -> None:
+    if not is_admin(message.from_user.id):
+        return
+    await message.answer(
+        f"📢 <b>Канал: {CHANNEL_USERNAME}</b>\n\n"
+        f"Постов в очереди: {len(CHANNEL_POSTS)}\n"
+        f"Следующий пост: #{_channel_post_index['idx'] % len(CHANNEL_POSTS) + 1}\n"
+        f"Автопостинг: {'✅ вкл' if _channel_post_index['running'] else '❌ выкл'}\n"
+        f"Интервал: каждые 12 часов",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📤 Опубликовать сейчас", callback_data="ch:now")],
+            [
+                InlineKeyboardButton(text="⏸ Стоп", callback_data="ch:stop"),
+                InlineKeyboardButton(text="▶️ Запуск", callback_data="ch:start"),
+            ],
+        ]),
+    )
+
+
+async def callback_channel(callback: CallbackQuery, bot: Bot) -> None:
+    if not is_admin(callback.from_user.id):
+        await callback.answer("Нет доступа.", show_alert=True)
+        return
+    action = callback.data.removeprefix("ch:")
+
+    if action == "now":
+        idx = _channel_post_index["idx"] % len(CHANNEL_POSTS)
+        text = CHANNEL_POSTS[idx]
+        text += (
+            "\n\n—\n"
+            "🤖 <b>Бот для учёта расходов:</b> @tgbotexpensiveclaudecode_bot\n"
+            "Пиши <code>кофе 300</code> — и контролируй финансы."
+        )
+        try:
+            await bot.send_message(CHANNEL_USERNAME, text, parse_mode="HTML")
+            _channel_post_index["idx"] = idx + 1
+            await callback.answer(f"Пост #{idx + 1} опубликован!")
+        except Exception as e:
+            await callback.answer(f"Ошибка: {e}", show_alert=True)
+
+    elif action == "stop":
+        _channel_post_index["running"] = False
+        await callback.answer("Автопостинг остановлен.")
+
+    elif action == "start":
+        if not _channel_post_index["running"]:
+            asyncio.create_task(channel_scheduler(bot))
+            await callback.answer("Автопостинг запущен!")
+        else:
+            await callback.answer("Уже работает.")
+
+
 # ── Админка ───────────────────────────────────────────────────────────────────
 
 def is_admin(user_id: int) -> bool:
@@ -2082,7 +2243,9 @@ async def main() -> None:
 
     # Админка
     dp.message.register(cmd_admin, Command("admin"))
+    dp.message.register(cmd_channel, Command("channel"))
     dp.callback_query.register(callback_admin, F.data.startswith("adm:"))
+    dp.callback_query.register(callback_channel, F.data.startswith("ch:"))
     dp.message.register(handle_admin_grant, Form.admin_grant_pro)
     dp.message.register(handle_admin_revoke, Form.admin_revoke_pro)
 
@@ -2104,6 +2267,7 @@ async def main() -> None:
 
     log.info("Бот запущен")
     asyncio.create_task(recurring_scheduler(bot))
+    asyncio.create_task(channel_scheduler(bot))
     await dp.start_polling(bot)
 
 
